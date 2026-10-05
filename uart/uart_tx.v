@@ -97,7 +97,7 @@
 //         end
 // endmodule
 
-`timescale 1ns / 1ps
+`timescale 1ns / 1ns
 
 // ----------------------------------------------------------------
 // Module   : uart_tx
@@ -212,5 +212,3 @@ module uart_tx #(
     end
 
 endmodule
-
-//伟大尝试
