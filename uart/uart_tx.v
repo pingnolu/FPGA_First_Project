@@ -130,14 +130,14 @@
 module uart_tx #(
     parameter integer CLK_FREQ = 50_000_000, // 系统时钟频率 (默认 50MHz)
     parameter integer BAUD_RATE = 9600,      //波特率
-    parameter integer BIT_COUNT = 8          //数据位
+    parameter integer DATA_BITS = 8          //数据位
 
 )(
 
     input  wire i_clk,      // 系统时钟
     input  wire i_rst_n,    // 低电平异步复位
     input  wire i_tx_valid,       // 握手信号
-    input wire [BIT_COUNT-1:0]i_tx_data,    //要发送的数据
+    input wire [DATA_BITS-1:0]i_tx_data,    //要发送的数据
     output reg o_tx,        // 串口输出值,8位数据
     output reg o_tx_ready        //状态信号
 );
@@ -154,7 +154,7 @@ module uart_tx #(
 //====================================================================
     reg [14:0]r_baud_cnt;       //位宽放大一点，兼容不同波特率
     reg [3:0] r_bit_cnt;        //数据计数器
-    reg [BIT_COUNT-1:0] r_tx_data;        //数据寄存器（防止中途更改数据）
+    reg [DATA_BITS-1:0] r_tx_data;        //数据寄存器（防止中途更改数据）
 
 
     wire w_tx_busy = ~o_tx_ready;
@@ -190,7 +190,7 @@ module uart_tx #(
                 begin
                     o_tx_ready<=1;      //默认拉高
                     r_bit_cnt<= 0;
-                    r_tx_data<={BIT_COUNT{1'b0}};           //{N{A}} 的意思就是：把 A 这个信号，原封不动地复制 N 遍，拼在一起。
+                    r_tx_data<={DATA_BITS{1'b0}};           //{N{A}} 的意思就是：把 A 这个信号，原封不动地复制 N 遍，拼在一起。
                 end
             else
                 begin
@@ -207,7 +207,7 @@ module uart_tx #(
                         begin
                             if(w_baud_pulse)
                                 begin
-                                    if(r_bit_cnt==BIT_COUNT+1)
+                                    if(r_bit_cnt==DATA_BITS+1)
                                         begin
                                             r_bit_cnt<=0;
                                             o_tx_ready<=1;
@@ -237,7 +237,7 @@ module uart_tx #(
                 begin
                     if(r_bit_cnt==0)
                         o_tx<=0;
-                    else if(r_bit_cnt==BIT_COUNT+1)
+                    else if(r_bit_cnt==DATA_BITS+1)
                         o_tx<=1;
                     else
                         o_tx<=r_tx_data[r_bit_cnt-1];
@@ -271,12 +271,12 @@ endmodule
 // module uart_tx #(
 //     parameter integer CLK_FREQ  = 50_000_000,
 //     parameter integer BAUD_RATE = 9600,
-//     parameter integer BIT_COUNT = 8
+//     parameter integer DATA_BITS = 8
 // )(
 //     input  wire                 i_clk,
 //     input  wire                 i_rst_n,
 //     input  wire                 i_tx_valid,
-//     input  wire [BIT_COUNT-1:0] i_tx_data,
+//     input  wire [DATA_BITS-1:0] i_tx_data,
 //     output reg                  o_tx,
 //     output reg                  o_tx_ready
 // );
@@ -295,8 +295,8 @@ endmodule
 //     reg [3:0]            r_bit_cnt;
 
 //     // 【架构巨变】：不再只存数据，而是存一整个“物理发送帧” (Start + Data + Stop)
-//     // 位宽为：1(起始) + BIT_COUNT(数据) + 1(停止)
-//     reg [BIT_COUNT+1:0]  r_tx_frame;
+//     // 位宽为：1(起始) + DATA_BITS(数据) + 1(停止)
+//     reg [DATA_BITS+1:0]  r_tx_frame;
 
 //     wire w_tx_busy    = ~o_tx_ready;
 //     wire w_baud_pulse = (r_baud_cnt == BAUD_CNT_MAX);
@@ -325,7 +325,7 @@ endmodule
 //             o_tx_ready <= 1'b1;
 //             r_bit_cnt  <= 4'd0;
 //             o_tx       <= 1'b1; // 复位时，串口线必须为高电平
-//             r_tx_frame <= {(BIT_COUNT+2){1'b1}};
+//             r_tx_frame <= {(DATA_BITS+2){1'b1}};
 //         end else begin
 //             if (o_tx_ready) begin
 //                 if (i_tx_valid) begin
@@ -336,13 +336,13 @@ endmodule
 //                 end
 //             end else begin
 //                 if (w_baud_pulse) begin
-//                     if (r_bit_cnt == BIT_COUNT + 1) begin
+//                     if (r_bit_cnt == DATA_BITS + 1) begin
 //                         o_tx_ready <= 1'b1; // 发送结束
 //                         r_bit_cnt  <= 4'd0;
 //                     end else begin
 //                         r_bit_cnt  <= r_bit_cnt + 1'b1;
 //                         // 【硬件思维】：物理移位！向右挤压，最高位补 1 (空闲电平)
-//                         r_tx_frame <= {1'b1, r_tx_frame[BIT_COUNT+1 : 1]};
+//                         r_tx_frame <= {1'b1, r_tx_frame[DATA_BITS+1 : 1]};
 //                     end
 //                 end
 //             end
